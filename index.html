@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 3 英語學習中心</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body,#root{height:100%;min-height:100vh}
+  body{background:#faf8f3;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1a2744}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  button:active{transform:scale(.96)}
+  input:focus{outline:none;border-color:#6366f1!important;box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:#f0ede6}
+  ::-webkit-scrollbar-thumb{background:#c0bab0;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+/* ─── DATA ─── */
+const VOCAB = [
+  { id:1,    word:"excuse me",  ipa:"[ɪk`skjuz ,mi]",  pos:"phr.",   zh:"抱歉；打擾",  ex:"Excuse me. Is this the right bus to the zoo?",                     sy:["ex","cuse","me"] },
+  { id:2,    word:"second",     ipa:"[`sɛkənd]",        pos:"adj.",   zh:"第二的",      ex:"English is the second class on Mondays.",                         sy:["sec","ond"] },
+  { id:3,    word:"third",      ipa:"[θɜd]",            pos:"adj.",   zh:"第三的",      ex:"I'm the third child. I have two big brothers.",                   sy:["third"] },
+  { id:4,    word:"March",      ipa:"[mɑrtʃ]",          pos:"n.",     zh:"三月",        ex:"There is a party at Cindy's house on March 5.",                   sy:["March"] },
+  { id:5,    word:"holiday",    ipa:"[`hɑlə,de]",       pos:"n.",     zh:"假期；節日",  ex:"We are going to Japan for our holidays.",                         sy:["hol","i","day"] },
+  { id:6,    word:"street",     ipa:"[strɪt]",          pos:"n.",     zh:"街道",        ex:"Wendy's flower shop is on Victor Street.",                        sy:["street"] },
+  { id:7,    word:"festival",   ipa:"[`fɛstəvl]",       pos:"n.",     zh:"節日；節慶",  ex:"People celebrate the Moon Festival in fall.",                     sy:["fes","ti","val"] },
+  { id:8,    word:"when",       ipa:"[(h)wɛn]",         pos:"adv.",   zh:"何時",        ex:"When is the grass concert? It's on April 13.",                    sy:["when"] },
+  { id:9,    word:"full",       ipa:"[fʊl]",            pos:"adj.",   zh:"完整的",      ex:"Dan, please write your full name here.",                          sy:["full"] },
+  { id:10,   word:"date",       ipa:"[dɛt]",            pos:"n.",     zh:"日期",        ex:"What's the date of Peter's birthday?",                            sy:["date"] },
+  { id:11,   word:"colorful",   ipa:"[`kʌlərfəl]",      pos:"adj.",   zh:"繽紛的",      ex:"There are colorful pictures of flowers on the table.",            sy:["col","or","ful"] },
+  { id:12,   word:"powder",     ipa:"[`paʊdər]",        pos:"n.",     zh:"粉末",        ex:"What is the white powder for?",                                   sy:["pow","der"] },
+  { id:null, word:"take...off", ipa:"[tɛk`ɔf]",         pos:"phr.",   zh:"休假",        ex:"Can I please take ten days off from school?",                     sy:["take","off"] },
+  { id:null, word:"call",       ipa:"[kɔl]",            pos:"v.",     zh:"稱……為",      ex:"We also call Holi the festival of colors.",                       sy:["call"] },
+  { id:null, word:"I get it.",  ipa:"[aɪ`gɛt ɪt]",     pos:"phrase", zh:"我懂了",      ex:"Sara: Do you get it? Alice: Yes, I get it.",                      sy:["I","get","it"] },
+  { id:13,   word:"month",      ipa:"[mʌnθ]",           pos:"n.",     zh:"月",          ex:"There are twelve months in a year.",                              sy:["month"] },
+  { id:14,   word:"January",    ipa:"[`dʒænjʊ,ɛrɪ]",   pos:"n.",     zh:"一月",        ex:"The festival starts on the first day of January.",                sy:["Jan","u","ar","y"] },
+  { id:15,   word:"February",   ipa:"[`fɛbrʊ,ɛrɪ]",    pos:"n.",     zh:"二月",        ex:"Chinese New Year is in February this year.",                      sy:["Feb","ru","ar","y"] },
+  { id:16,   word:"April",      ipa:"[`eprəl]",         pos:"n.",     zh:"四月",        ex:"Lydia and her family go to the States in April every year.",      sy:["A","pril"] },
+  { id:17,   word:"May",        ipa:"[me]",             pos:"n.",     zh:"五月",        ex:"We have a lot of rain in Taiwan from May to June.",               sy:["May"] },
+  { id:18,   word:"June",       ipa:"[dʒʊn]",           pos:"n.",     zh:"六月",        ex:"I can go to your shop's opening party on June 2.",                sy:["June"] },
+  { id:19,   word:"July",       ipa:"[dʒʊ`laɪ]",        pos:"n.",     zh:"七月",        ex:"Jane's birthday party is on July 20.",                            sy:["Ju","ly"] },
+  { id:20,   word:"August",     ipa:"[`ɔgəst]",         pos:"n.",     zh:"八月",        ex:"Father's Day in Taiwan is on August 8.",                          sy:["Au","gust"] },
+  { id:21,   word:"September",  ipa:"[sɛp`tɛmbər]",     pos:"n.",     zh:"九月",        ex:"Shelly has a trip with her sister on September 15.",              sy:["Sep","tem","ber"] },
+  { id:22,   word:"October",    ipa:"[ɑk`tobər]",       pos:"n.",     zh:"十月",        ex:"The welcoming party for Julia is on October 3. Are you coming?",  sy:["Oc","to","ber"] },
+  { id:23,   word:"November",   ipa:"[no`vɛmbər]",      pos:"n.",     zh:"十一月",      ex:"Thanksgiving falls on the fourth Thursday of November.",           sy:["Nov","em","ber"] },
+  { id:24,   word:"December",      ipa:"[dɪ`sɛmbər]",       pos:"n.",     zh:"十二月",      ex:"Christmas is on December 25.",                                                    sy:["Dec","em","ber"] },
+  { id:25,   word:"celebrate",     ipa:"[`sɛlə,brɛt]",      pos:"v.",     zh:"慶祝",        ex:"Tom and his sister are celebrating their dad's birthday.",                        sy:["cel","e","brate"] },
+  { id:26,   word:"for example",   ipa:"[fər ɪg`zæmpl]",    pos:"phr.",   zh:"例如",        ex:"The robot can do many things. For example, it can book tickets for you.",         sy:["for","ex","am","ple"] },
+  { id:27,   word:"each other",    ipa:"[ɪtʃ `ʌðər]",       pos:"pron.",  zh:"彼此；互相",  ex:"The man and the woman are looking at each other.",                                sy:["each","oth","er"] },
+  { id:28,   word:"large",         ipa:"[lɑrdʒ]",            pos:"adj.",   zh:"大的",        ex:"I like this table. It is large.",                                                 sy:["large"] },
+  { id:29,   word:"1st",           ipa:"[fɜst]",             pos:"adj.",   zh:"第一的",      ex:"This is my first visit to Taipei.",                                               sy:["first"] },
+  { id:30,   word:"knock",         ipa:"[nɑk]",              pos:"v.",     zh:"敲",          ex:"Please knock on the door before you enter.",                                      sy:["knock"] },
+  { id:31,   word:"wish",          ipa:"[wɪʃ]",              pos:"v.",     zh:"祝；希望",    ex:"We wish you a happy birthday.",                                                   sy:["wish"] },
+  { id:32,   word:"wash",          ipa:"[wɑʃ]",              pos:"v.",     zh:"清洗",        ex:"Brenda, please wash your hands. They are dirty.",                                 sy:["wash"] },
+  { id:33,   word:"thing",         ipa:"[θɪŋ]",              pos:"n.",     zh:"事物；東西",  ex:"There are many things in the box.",                                               sy:["thing"] },
+  { id:34,   word:"in common",     ipa:"[ɪn `kɑmən]",        pos:"phr.",   zh:"共同",        ex:"Alex and his brother have many things in common.",                                sy:["in","com","mon"] },
+  { id:35,   word:"mark",          ipa:"[mɑrk]",             pos:"v.",     zh:"標示",        ex:"What marks the start of spring?",                                                 sy:["mark"] },
+  { id:36,   word:"start",         ipa:"[stɑrt]",            pos:"n.",     zh:"開始",        ex:"It's the start of the holidays! Let's go out and have fun.",                      sy:["start"] },
+  { id:37,   word:"costume",       ipa:"[`kɑstjum]",         pos:"n.",     zh:"化裝服",      ex:"There are many costumes in that store.",                                          sy:["cos","tume"] },
+  { id:38,   word:"luck",          ipa:"[lʌk]",              pos:"n.",     zh:"運氣",        ex:"Good luck with everything!",                                                      sy:["luck"] },
+  { id:39,   word:"celebration",   ipa:"[,sɛlə`brɛʃən]",    pos:"n.",     zh:"慶祝活動",    ex:"It's my grandpa's ninetieth birthday. We are having a big celebration.",           sy:["cel","e","bra","tion"] },
+  { id:null, word:"other",         ipa:"[`ʌðər]",            pos:"adj.",   zh:"其他的",      ex:"How do other countries celebrate the New Year?",                                  sy:["oth","er"] },
+  { id:null, word:"All is well.",  ipa:"[ɔl ɪz wɛl]",       pos:"idiom",  zh:"一切都好；一切安好", ex:"All is well.",                                                            sy:["All","is","well"] },
+];
+
+function tts(text, rate=0.88){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="en-US"; u.rate=rate;
+  window.speechSynthesis.speak(u);
+}
+
+/* ══════════════════════════════════════════════
+   FLASHCARD MODE  (含單字選擇)
+══════════════════════════════════════════════ */
+function FlashcardMode({selected,setSelected}){
+  const [phase,setPhase]=useState('select'); // 'select'|'study'
+  const [queue,setQueue]=useState([]);
+  const [qIdx,setQIdx]=useState(0);
+  const [flipped,setFlipped]=useState(false);
+
+  const toggleAll=()=>{ selected.size===VOCAB.length?setSelected(new Set()):setSelected(new Set(VOCAB.map((_,i)=>i))); };
+  const toggle=i=>setSelected(s=>{ const n=new Set(s); n.has(i)?n.delete(i):n.add(i); return n; });
+  const startStudy=()=>{
+    if(!selected.size) return;
+    const q=[...selected].sort((a,b)=>a-b);
+    setQueue(q); setQIdx(0); setFlipped(false); setPhase('study');
+  };
+  const go=d=>{
+    setFlipped(false);
+    setTimeout(()=>setQIdx(i=>Math.max(0,Math.min(queue.length-1,i+d))),180);
+  };
+
+  /* ─── SELECT SCREEN ─── */
+  if(phase==='select') return(
+    <div style={S.wrap}>
+      <div style={{...S.row,marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
+        <div style={{fontSize:"15px",fontWeight:800,color:"#1a2744"}}>選擇單字卡</div>
+        <div style={{display:"flex",gap:"6px",marginLeft:"auto"}}>
+          <button style={{...S.goldBtn,padding:"8px 12px",fontSize:"12px"}} onClick={toggleAll}>
+            {selected.size===VOCAB.length?"✗ 全消":"✓ 全選"}
+          </button>
+          <button style={{...S.checkBtn,width:"auto",padding:"8px 18px",fontSize:"13px",
+            opacity:selected.size===0?0.4:1,boxShadow:"none"}}
+            onClick={startStudy} disabled={!selected.size}>
+            開始 ({selected.size})
+          </button>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+        {VOCAB.map((v,i)=>{
+          const on=selected.has(i);
+          return(
+            <div key={i} onClick={()=>toggle(i)} style={{
+              background:on?"#1a2744":"white", color:on?"white":"#1a2744",
+              border:on?"2px solid #1a2744":"2px solid #e5e7eb",
+              borderRadius:"12px", padding:"10px 12px", cursor:"pointer",
+              transition:"all .15s", display:"flex", flexDirection:"column", gap:"3px", userSelect:"none",
+            }}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:"11px",fontWeight:700,
+                  background:on?"rgba(255,255,255,.18)":"#e8edf7",
+                  color:on?"rgba(255,255,255,.75)":"#6b7280",
+                  padding:"1px 7px",borderRadius:"99px"}}>{v.id??'—'}</span>
+                <span style={{fontSize:"14px"}}>{on?"✓":""}</span>
+              </div>
+              <div style={{fontSize:"15px",fontWeight:800,lineHeight:1.2}}>{v.word}</div>
+              <div style={{fontSize:"12px",opacity:0.7}}>{v.zh}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{height:"24px"}}/>
+    </div>
+  );
+
+  /* ─── STUDY SCREEN ─── */
+  const item=VOCAB[queue[qIdx]];
+  return(
+    <div style={S.wrap}>
+      {/* progress bar */}
+      <div style={{background:"#e5e7eb",borderRadius:"99px",height:"6px",marginBottom:"10px",overflow:"hidden"}}>
+        <div style={{background:"linear-gradient(90deg,#ff6b47,#ffd166)",height:"100%",borderRadius:"99px",
+          width:`${((qIdx+1)/queue.length)*100}%`,transition:"width .3s"}}/>
+      </div>
+
+      {/* counter + back button */}
+      <div style={{...S.row,marginBottom:"8px"}}>
+        <button onClick={()=>setPhase('select')} style={{...S.navBtn,fontSize:"12px",padding:"7px 12px"}}>
+          ← 重新選題
+        </button>
+        <p style={{...S.counter,margin:0}}>{qIdx+1} / {queue.length}</p>
+        <div style={{width:"80px"}}/>
+      </div>
+
+      {/* 3-D flip card */}
+      <div style={S.persp} onClick={()=>setFlipped(f=>!f)}>
+        <div style={{...S.inner, transform:flipped?"rotateY(180deg)":"none"}}>
+          <div style={{...S.face,...S.front}}>
+            <span style={S.badge}>{item.id??'—'}</span>
+            <div style={S.wordBig}>{item.word}</div>
+            <div style={S.ipa}>{item.ipa}</div>
+            <span style={S.pill}>{item.pos}</span>
+            <div style={S.zhBig}>{item.zh}</div>
+            <div style={S.hint}>👆 點擊翻面 → 例句</div>
+          </div>
+          <div style={{...S.face,...S.back}}>
+            <div style={S.exLabel}>📖 例句</div>
+            <div style={S.exText}>{item.ex}</div>
+            <button style={S.ghostBtn} onClick={e=>{e.stopPropagation();tts(item.ex,0.78);}}>
+              🔊 聽例句
+            </button>
+            <div style={S.hint}>👆 點擊翻回</div>
+          </div>
+        </div>
+      </div>
+
+      {/* controls */}
+      <div style={S.row}>
+        <button style={{...S.navBtn,opacity:qIdx===0?0.3:1}} onClick={()=>go(-1)} disabled={qIdx===0}>◀</button>
+        <button style={S.goldBtn} onClick={()=>tts(item.word,0.78)}>🔊 單字</button>
+        <button style={S.goldBtn} onClick={()=>tts(item.ex,0.75)}>🔊 例句</button>
+        <button style={{...S.navBtn,opacity:qIdx===queue.length-1?0.3:1}} onClick={()=>go(1)} disabled={qIdx===queue.length-1}>▶</button>
+      </div>
+
+      {/* dot track */}
+      <div style={S.dots}>
+        {queue.map((_,i)=>(
+          <div key={i} onClick={()=>{setFlipped(false);setQIdx(i);}}
+            style={{...S.dot,background:i===qIdx?"#ff6b47":i<qIdx?"#ffd166":"#dde3ef"}}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   SPELLING MODE  (含單字選擇)
+══════════════════════════════════════════════ */
+function SpellingMode({selected,setSelected}){
+  const [phase,setPhase]=useState('select'); // 'select'|'practice'|'done'
+  const [queue,setQueue]=useState([]);
+  const [qIdx,setQIdx]=useState(0);
+  const [input,setInput]=useState('');
+  const [showHint,setShowHint]=useState(false);
+  const [result,setResult]=useState(null);
+  const [log,setLog]=useState([]);
+  const ref=useRef(null);
+
+  useEffect(()=>{ if(phase==='practice') ref.current?.focus(); },[qIdx,phase]);
+
+  const toggleAll=()=>{ selected.size===VOCAB.length?setSelected(new Set()):setSelected(new Set(VOCAB.map((_,i)=>i))); };
+  const toggle=i=>setSelected(s=>{ const n=new Set(s); n.has(i)?n.delete(i):n.add(i); return n; });
+  const startPractice=()=>{
+    if(!selected.size) return;
+    const q=[...selected].sort((a,b)=>a-b);
+    setQueue(q);setQIdx(0);setLog([]);setInput('');setResult(null);setShowHint(false);setPhase('practice');
+  };
+
+  /* ─── SELECT SCREEN ─── */
+  if(phase==='select') return(
+    <div style={S.wrap}>
+      <div style={{...S.row,marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
+        <div style={{fontSize:"15px",fontWeight:800,color:"#1a2744"}}>選擇練習單字</div>
+        <div style={{display:"flex",gap:"6px",marginLeft:"auto"}}>
+          <button style={{...S.goldBtn,padding:"8px 12px",fontSize:"12px"}} onClick={toggleAll}>
+            {selected.size===VOCAB.length?"✗ 全消":"✓ 全選"}
+          </button>
+          <button style={{...S.checkBtn,width:"auto",padding:"8px 18px",fontSize:"13px",
+            opacity:selected.size===0?0.4:1,boxShadow:"none"}}
+            onClick={startPractice} disabled={!selected.size}>
+            開始 ({selected.size})
+          </button>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+        {VOCAB.map((v,i)=>{
+          const on=selected.has(i);
+          return(
+            <div key={i} onClick={()=>toggle(i)} style={{
+              background:on?"#1a2744":"white",color:on?"white":"#1a2744",
+              border:on?"2px solid #1a2744":"2px solid #e5e7eb",
+              borderRadius:"12px",padding:"10px 12px",cursor:"pointer",
+              transition:"all .15s",display:"flex",flexDirection:"column",gap:"3px",userSelect:"none",
+            }}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:"11px",fontWeight:700,
+                  background:on?"rgba(255,255,255,.18)":"#e8edf7",
+                  color:on?"rgba(255,255,255,.75)":"#6b7280",
+                  padding:"1px 7px",borderRadius:"99px"}}>{v.id??'—'}</span>
+                <span style={{fontSize:"14px"}}>{on?"✓":""}</span>
+              </div>
+              <div style={{fontSize:"15px",fontWeight:800,lineHeight:1.2}}>{v.word}</div>
+              <div style={{fontSize:"12px",opacity:0.7}}>{v.zh}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{height:"24px"}}/>
+    </div>
+  );
+
+  /* ─── DONE SCREEN ─── */
+  const correct=log.filter(Boolean).length;
+  if(phase==='done') return(
+    <div style={S.wrap}>
+      <div style={{...S.whiteCard,paddingTop:"36px",paddingBottom:"36px"}}>
+        <div style={{fontSize:"52px"}}>🎊</div>
+        <div style={{fontSize:"22px",fontWeight:800,color:"#1a2744"}}>練習完成！</div>
+        <div style={{fontSize:"15px",color:"#6b7280"}}>共 {queue.length} 題，答對 {correct} 題</div>
+        <div style={{fontSize:"42px",fontWeight:900,color:correct/queue.length>=0.8?"#10b981":correct/queue.length>=0.6?"#f59e0b":"#ef4444"}}>
+          {Math.round(correct/queue.length*100)}%
+        </div>
+        <div style={{display:"flex",gap:"8px",width:"100%"}}>
+          <button style={{...S.nextBtn,flex:1}} onClick={()=>{setQIdx(0);setLog([]);setInput('');setResult(null);setShowHint(false);setPhase('practice');}}>🔄 再練一次</button>
+          <button style={{...S.goldBtn,flex:1,padding:"12px"}} onClick={()=>setPhase('select')}>✏️ 重新選題</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ─── PRACTICE SCREEN ─── */
+  const item=VOCAB[queue[qIdx]];
+  const check=()=>{
+    if(!input.trim()) return;
+    const ok=input.trim().toLowerCase()===item.word.toLowerCase();
+    setResult(ok);setLog(l=>[...l,ok]);
+  };
+  const next=()=>{
+    setInput('');setResult(null);setShowHint(false);
+    qIdx+1<queue.length?setQIdx(q=>q+1):setPhase('done');
+  };
+
+  return(
+    <div style={S.wrap}>
+      {/* progress bar */}
+      <div style={{background:"#e5e7eb",borderRadius:"99px",height:"6px",marginBottom:"10px",overflow:"hidden"}}>
+        <div style={{background:"linear-gradient(90deg,#ff6b47,#ffd166)",height:"100%",borderRadius:"99px",
+          width:`${(qIdx/queue.length)*100}%`,transition:"width .3s"}}/>
+      </div>
+
+      <div style={S.scorePill}>
+        ✅ {correct}/{log.length} 答對　第 {qIdx+1}/{queue.length} 題
+        <button onClick={()=>setPhase('select')} style={{marginLeft:"10px",background:"rgba(255,255,255,.2)",
+          border:"none",color:"white",borderRadius:"6px",padding:"2px 8px",cursor:"pointer",fontSize:"11px",fontWeight:700}}>
+          ← 重新選題
+        </button>
+      </div>
+
+      <div style={S.whiteCard}>
+        <span style={S.badgeDark}>{item.id??'—'}</span>
+        <div style={{...S.zhBig,color:"#1a2744",fontSize:"24px"}}>{item.zh}</div>
+        <span style={{...S.pill,background:"#e8edf7",color:"#1a2744"}}>{item.pos}</span>
+        <div style={S.row}>
+          <button style={S.goldBtn} onClick={()=>tts(item.word,0.65)}>🔊 慢速</button>
+          <button style={S.goldBtn} onClick={()=>tts(item.word)}>🔊 正常</button>
+        </div>
+        <button style={S.dashed} onClick={()=>setShowHint(h=>!h)}>💡 音節提示 {showHint?"▲":"▼"}</button>
+        {showHint&&(
+          <div style={S.syllRow}>{item.sy.map((s,i)=><span key={i} style={S.syllChip}>{s}</span>)}</div>
+        )}
+        <input ref={ref}
+          style={{...S.textIn,borderColor:result===null?"#e5e7eb":result?"#10b981":"#ef4444"}}
+          value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&result===null&&check()}
+          placeholder="輸入英文單字…" disabled={result!==null}/>
+        {result===null?(
+          <button style={S.checkBtn} onClick={check}>✓ 確認答案</button>
+        ):(
+          <div style={{width:"100%",display:"flex",flexDirection:"column",gap:"8px"}}>
+            <div style={{...S.banner,background:result?"#10b981":"#ef4444"}}>
+              {result?"🎉 拼寫正確！":`❌ 正確：${item.word}`}
+            </div>
+            {!result&&(
+              <div style={S.diffRow}>
+                {item.word.split('').map((ch,i)=>{
+                  const match=input[i]?.toLowerCase()===ch.toLowerCase();
+                  return<span key={i} style={{color:match?"#10b981":"#ef4444",fontWeight:800,fontSize:"22px"}}>{ch}</span>;
+                })}
+              </div>
+            )}
+            <button style={S.nextBtn} onClick={next}>{qIdx+1<queue.length?"下一題 →":"查看結果 🎊"}</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   PRONUNCIATION MODE
+══════════════════════════════════════════════ */
+function PronunciationMode(){
+  const [idx,setIdx]=useState(0);
+  const [mode,setMode]=useState('word');
+  const [rec,setRec]=useState(false);
+  const [transcript,setTranscript]=useState('');
+  const [fb,setFb]=useState(null);
+  const recRef=useRef(null);
+  const item=VOCAB[idx];
+  const target=mode==='word'?item.word:item.ex;
+
+  function lev(a,b){
+    const dp=Array.from({length:a.length+1},(_,i)=>
+      Array.from({length:b.length+1},(_,j)=>i===0?j:j===0?i:0));
+    for(let i=1;i<=a.length;i++)
+      for(let j=1;j<=b.length;j++)
+        dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+    return dp[a.length][b.length];
+  }
+
+  function analyze(said){
+    const norm=s=>s.toLowerCase().replace(/[^a-z\s]/g,'').trim();
+    const sw=norm(said).split(/\s+/).filter(Boolean);
+    const tw=norm(target).split(/\s+/).filter(Boolean);
+    const missed=tw.filter(t=>!sw.some(s=>s===t||lev(s,t)<=1));
+    const acc=Math.round((tw.length-missed.length)/tw.length*100);
+    let grade,tip,color;
+    if(acc===100){grade="🏆 完美發音";tip="發音非常標準！繼續保持！";color="#10b981";}
+    else if(acc>=80){grade="⭐ 優秀";tip=`幾乎完美！稍留意：${missed.join("、")}`;color="#22c55e";}
+    else if(acc>=60){grade="👍 良好";tip=`繼續練習：${missed.join("、")}`;color="#f59e0b";}
+    else if(acc>=40){grade="💪 加油";tip=`多聽幾遍再開口：${missed.join("、")}`;color="#f97316";}
+    else{grade="🔄 再試一次";tip="建議先多聽示範再錄音";color="#ef4444";}
+    setFb({acc,grade,tip,color,missed});
+  }
+
+  const startRec=()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){alert("請使用 Chrome 瀏覽器以啟用語音辨識");return;}
+    const r=new SR();
+    r.lang="en-US";r.continuous=false;r.interimResults=false;
+    r.onresult=e=>{const s=e.results[0][0].transcript;setTranscript(s);analyze(s);};
+    r.onerror=()=>setRec(false);
+    r.onend=()=>setRec(false);
+    recRef.current=r;
+    setTranscript('');setFb(null);
+    r.start();setRec(true);
+  };
+  const stopRec=()=>{recRef.current?.stop();setRec(false);};
+  const move=d=>{setTranscript('');setFb(null);setIdx(i=>Math.max(0,Math.min(VOCAB.length-1,i+d)));};
+
+  return(
+    <div style={S.wrap}>
+      <div style={S.toggle}>
+        {[['word','🔤 單字'],['sentence','📝 例句']].map(([k,l])=>(
+          <button key={k}
+            style={{...S.togBtn,...(mode===k?S.togActive:{})}}
+            onClick={()=>{setMode(k);setTranscript('');setFb(null);}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div style={S.whiteCard}>
+        <span style={S.badgeDark}>{item.id??'—'}</span>
+        <div style={{fontSize:mode==='word'?'36px':'18px',fontWeight:800,color:"#1a2744",textAlign:"center",lineHeight:1.5,animation:"fadeIn .3s ease"}}>
+          {target}
+        </div>
+        {mode==='word'&&<div style={S.ipa}>{item.ipa}</div>}
+        {mode==='sentence'&&<div style={{fontSize:"13px",color:"#6b7280"}}>{item.zh}</div>}
+
+        <button style={S.goldBtn} onClick={()=>tts(target,0.75)}>🔊 聽示範</button>
+
+        <button
+          style={{...S.recBtn,background:rec?"#ef4444":"#ff6b47"}}
+          onClick={rec?stopRec:startRec}>
+          {rec?"⏹ 停止錄音":"🎤 開始錄音"}
+        </button>
+        {rec&&<div style={S.recPulse}>● 錄音中，請清楚說出{mode==='word'?'單字':'整個句子'}…</div>}
+
+        {transcript&&(
+          <div style={S.transBox}>
+            <div style={S.transLbl}>您說的：</div>
+            <div style={S.transVal}>「{transcript}」</div>
+          </div>
+        )}
+
+        {fb&&(
+          <div style={{...S.fbBox,borderLeftColor:fb.color}}>
+            <div style={{fontSize:"19px",fontWeight:800,color:fb.color,marginBottom:"6px"}}>
+              {fb.grade} — {fb.acc}%
+            </div>
+            <div style={{fontSize:"14px",color:"#374151",lineHeight:1.6}}>{fb.tip}</div>
+            {fb.missed.length>0&&(
+              <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginTop:"10px"}}>
+                {fb.missed.map((w,i)=><span key={i} style={S.missedChip}>{w}</span>)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div style={S.row}>
+        <button style={{...S.navBtn,opacity:idx===0?0.3:1}} onClick={()=>move(-1)} disabled={idx===0}>◀ 上一個</button>
+        <span style={S.counter}>{idx+1} / {VOCAB.length}</span>
+        <button style={{...S.navBtn,opacity:idx===VOCAB.length-1?0.3:1}} onClick={()=>move(1)} disabled={idx===VOCAB.length-1}>下一個 ▶</button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   HANDWRITING MODE
+══════════════════════════════════════════════ */
+function HandwritingMode({selected,setSelected}){
+  const [phase,setPhase]=useState('select');
+  const [queue,setQueue]=useState([]);
+  const [qIdx,setQIdx]=useState(0);
+  const [result,setResult]=useState(null);  // null | {ok,recognized,correct}
+  const [loading,setLoading]=useState(false);
+  const [log,setLog]=useState([]);
+  const [showHint,setShowHint]=useState(false);
+  const canvasRef=useRef(null);
+  const drawing=useRef(false);
+  const lastPos=useRef({x:0,y:0});
+
+  /* ── canvas helpers ── */
+  const getPos=(e,canvas)=>{
+    const r=canvas.getBoundingClientRect();
+    const src=e.touches?e.touches[0]:e;
+    return{x:(src.clientX-r.left)*(canvas.width/r.width),
+           y:(src.clientY-r.top)*(canvas.height/r.height)};
+  };
+  const onDown=e=>{
+    e.preventDefault();
+    const cv=canvasRef.current; if(!cv) return;
+    drawing.current=true;
+    lastPos.current=getPos(e,cv);
+    const ctx=cv.getContext('2d');
+    ctx.beginPath();
+    ctx.arc(lastPos.current.x,lastPos.current.y,2,0,Math.PI*2);
+    ctx.fillStyle='#1a2744'; ctx.fill();
+  };
+  const onMove=e=>{
+    e.preventDefault();
+    if(!drawing.current) return;
+    const cv=canvasRef.current; if(!cv) return;
+    const pos=getPos(e,cv);
+    const ctx=cv.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(lastPos.current.x,lastPos.current.y);
+    ctx.lineTo(pos.x,pos.y);
+    ctx.strokeStyle='#1a2744'; ctx.lineWidth=3;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.stroke();
+    lastPos.current=pos;
+  };
+  const onUp=e=>{ e.preventDefault(); drawing.current=false; };
+  const clearCanvas=()=>{
+    const cv=canvasRef.current; if(!cv) return;
+    cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+    setResult(null);
+  };
+
+  /* ── AI 辨識 ── */
+  const recognize=async()=>{
+    const cv=canvasRef.current; if(!cv) return;
+    const blank=!cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data.some(v=>v!==0&&v!==255);
+    if(blank){alert('請先在畫布上手寫單字！');return;}
+    setLoading(true); setResult(null);
+    try{
+      const b64=cv.toDataURL('image/png').split(',')[1];
+      const item=VOCAB[queue[qIdx]];
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:100,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:'image/png',data:b64}},
+            {type:'text',text:`This is a student's handwritten English word on a white canvas. Read exactly what is written (ignore any extra marks or smudges). Reply with ONLY the recognized word or phrase in lowercase, nothing else.`}
+          ]}]
+        })
+      });
+      const data=await res.json();
+      const recognized=(data.content?.[0]?.text||'').trim().toLowerCase().replace(/[^a-z\s.]/g,'');
+      const correct=item.word.toLowerCase();
+      const ok=recognized===correct||recognized.replace(/\s+/g,'')===correct.replace(/\s+/g,'');
+      setResult({ok,recognized,correct});
+      setLog(l=>[...l,ok]);
+    }catch(err){
+      alert('辨識失敗，請確認網路連線');
+    }finally{
+      setLoading(false);
+    }
+  };
+
+  const next=()=>{
+    clearCanvas(); setShowHint(false);
+    qIdx+1<queue.length?setQIdx(q=>q+1):setPhase('done');
+  };
+
+  const toggleAll=()=>{ selected.size===VOCAB.length?setSelected(new Set()):setSelected(new Set(VOCAB.map((_,i)=>i))); };
+  const toggle=i=>setSelected(s=>{ const n=new Set(s); n.has(i)?n.delete(i):n.add(i); return n; });
+  const startPractice=()=>{
+    if(!selected.size) return;
+    const q=[...selected].sort((a,b)=>a-b);
+    setQueue(q);setQIdx(0);setLog([]);setResult(null);setShowHint(false);setPhase('practice');
+    setTimeout(clearCanvas,50);
+  };
+
+  /* ─── SELECT ─── */
+  if(phase==='select') return(
+    <div style={S.wrap}>
+      <div style={{...S.row,marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
+        <div style={{fontSize:"15px",fontWeight:800,color:"#1a2744"}}>選擇手寫單字</div>
+        <div style={{display:"flex",gap:"6px",marginLeft:"auto"}}>
+          <button style={{...S.goldBtn,padding:"8px 12px",fontSize:"12px"}} onClick={toggleAll}>
+            {selected.size===VOCAB.length?"✗ 全消":"✓ 全選"}
+          </button>
+          <button style={{...S.checkBtn,width:"auto",padding:"8px 18px",fontSize:"13px",
+            opacity:selected.size===0?0.4:1,boxShadow:"none"}}
+            onClick={startPractice} disabled={!selected.size}>
+            開始 ({selected.size})
+          </button>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+        {VOCAB.map((v,i)=>{
+          const on=selected.has(i);
+          return(
+            <div key={i} onClick={()=>toggle(i)} style={{
+              background:on?"#1a2744":"white",color:on?"white":"#1a2744",
+              border:on?"2px solid #1a2744":"2px solid #e5e7eb",
+              borderRadius:"12px",padding:"10px 12px",cursor:"pointer",
+              transition:"all .15s",display:"flex",flexDirection:"column",gap:"3px",userSelect:"none",
+            }}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:"11px",fontWeight:700,
+                  background:on?"rgba(255,255,255,.18)":"#e8edf7",
+                  color:on?"rgba(255,255,255,.75)":"#6b7280",
+                  padding:"1px 7px",borderRadius:"99px"}}>{v.id??'—'}</span>
+                <span style={{fontSize:"14px"}}>{on?"✓":""}</span>
+              </div>
+              <div style={{fontSize:"15px",fontWeight:800,lineHeight:1.2}}>{v.word}</div>
+              <div style={{fontSize:"12px",opacity:0.7}}>{v.zh}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{height:"24px"}}/>
+    </div>
+  );
+
+  /* ─── DONE ─── */
+  const correct_count=log.filter(Boolean).length;
+  if(phase==='done') return(
+    <div style={S.wrap}>
+      <div style={{...S.whiteCard,paddingTop:"36px",paddingBottom:"36px"}}>
+        <div style={{fontSize:"52px"}}>✍️</div>
+        <div style={{fontSize:"22px",fontWeight:800,color:"#1a2744"}}>手寫完成！</div>
+        <div style={{fontSize:"15px",color:"#6b7280"}}>共 {queue.length} 題，答對 {correct_count} 題</div>
+        <div style={{fontSize:"42px",fontWeight:900,color:correct_count/queue.length>=0.8?"#10b981":correct_count/queue.length>=0.6?"#f59e0b":"#ef4444"}}>
+          {Math.round(correct_count/queue.length*100)}%
+        </div>
+        <div style={{display:"flex",gap:"8px",width:"100%"}}>
+          <button style={{...S.nextBtn,flex:1}} onClick={()=>{setQIdx(0);setLog([]);setResult(null);setShowHint(false);setPhase('practice');setTimeout(clearCanvas,50);}}>🔄 再練一次</button>
+          <button style={{...S.goldBtn,flex:1,padding:"12px"}} onClick={()=>setPhase('select')}>✏️ 重新選題</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ─── PRACTICE ─── */
+  const item=VOCAB[queue[qIdx]];
+  return(
+    <div style={S.wrap}>
+      {/* progress */}
+      <div style={{background:"#e5e7eb",borderRadius:"99px",height:"6px",marginBottom:"10px",overflow:"hidden"}}>
+        <div style={{background:"linear-gradient(90deg,#6366f1,#a78bfa)",height:"100%",borderRadius:"99px",
+          width:`${(qIdx/queue.length)*100}%`,transition:"width .3s"}}/>
+      </div>
+
+      <div style={{...S.row,marginBottom:"8px"}}>
+        <button onClick={()=>setPhase('select')} style={{...S.navBtn,fontSize:"12px",padding:"7px 12px"}}>← 重新選題</button>
+        <span style={{...S.counter,margin:0}}>第 {qIdx+1} / {queue.length} 題</span>
+        <div style={{width:"80px"}}/>
+      </div>
+
+      <div style={S.whiteCard}>
+        <span style={S.badgeDark}>{item.id??'—'}</span>
+        <div style={{fontSize:"26px",fontWeight:800,color:"#1a2744"}}>{item.zh}</div>
+        <span style={{...S.pill,background:"#e8edf7",color:"#1a2744"}}>{item.pos}</span>
+
+        <div style={S.row}>
+          <button style={S.goldBtn} onClick={()=>tts(item.word,0.65)}>🔊 慢速</button>
+          <button style={S.goldBtn} onClick={()=>tts(item.word)}>🔊 正常</button>
+        </div>
+
+        <button style={S.dashed} onClick={()=>setShowHint(h=>!h)}>
+          💡 音節提示 {showHint?"▲":"▼"}
+        </button>
+        {showHint&&(
+          <div style={S.syllRow}>{item.sy.map((s,i)=><span key={i} style={S.syllChip}>{s}</span>)}</div>
+        )}
+
+        {/* ── CANVAS ── */}
+        <div style={{width:"100%",position:"relative"}}>
+          <canvas ref={canvasRef} width={480} height={180}
+            style={{width:"100%",height:"180px",background:"#f8faff",
+              border:"2.5px solid "+(result===null?"#c7d2fe":result.ok?"#10b981":"#ef4444"),
+              borderRadius:"16px",touchAction:"none",cursor:"crosshair",display:"block"}}
+            onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+            onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
+          />
+          {/* guide lines */}
+          <div style={{position:"absolute",top:"60px",left:"12px",right:"12px",
+            borderTop:"1px dashed #c7d2fe",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",top:"120px",left:"12px",right:"12px",
+            borderTop:"1px dashed #c7d2fe",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",bottom:"8px",right:"12px",
+            fontSize:"11px",color:"#94a3b8",pointerEvents:"none"}}>
+            在此手寫英文
+          </div>
+        </div>
+
+        {/* action buttons */}
+        {result===null?(
+          <div style={{...S.row,width:"100%"}}>
+            <button style={{...S.navBtn,flex:1,background:"#e5e7eb",color:"#6b7280"}} onClick={clearCanvas}>🗑 清除</button>
+            <button style={{...S.checkBtn,flex:2,boxShadow:"none",
+              opacity:loading?0.7:1,cursor:loading?"wait":"pointer"}}
+              onClick={recognize} disabled={loading}>
+              {loading?"🔍 辨識中…":"🤖 AI辨識"}
+            </button>
+          </div>
+        ):(
+          <div style={{width:"100%",display:"flex",flexDirection:"column",gap:"8px"}}>
+            {/* recognized text */}
+            <div style={{background:"#f0f4ff",borderRadius:"10px",padding:"10px 14px",textAlign:"center"}}>
+              <div style={{fontSize:"11px",color:"#6366f1",fontWeight:700,marginBottom:"4px"}}>AI 辨識結果</div>
+              <div style={{fontSize:"20px",fontWeight:800,color:"#1a2744"}}>「{result.recognized}」</div>
+            </div>
+            <div style={{...S.banner,background:result.ok?"#10b981":"#ef4444"}}>
+              {result.ok?"🎉 拼寫正確！":`❌ 正確寫法：${result.correct}`}
+            </div>
+            {!result.ok&&(
+              <div style={S.diffRow}>
+                {result.correct.split('').map((ch,i)=>{
+                  const match=result.recognized[i]===ch;
+                  return<span key={i} style={{color:match?"#10b981":"#ef4444",fontWeight:800,fontSize:"22px"}}>{ch}</span>;
+                })}
+              </div>
+            )}
+            <div style={{...S.row,width:"100%"}}>
+              <button style={{...S.navBtn,flex:1,background:"#e5e7eb",color:"#6b7280"}} onClick={clearCanvas}>✏️ 重寫</button>
+              <button style={{...S.nextBtn,flex:2}} onClick={next}>{qIdx+1<queue.length?"下一題 →":"查看結果 🎊"}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   STYLES
+══════════════════════════════════════════════ */
+const S={
+  wrap:{padding:"20px 16px 56px",maxWidth:"520px",margin:"0 auto"},
+  counter:{textAlign:"center",fontSize:"13px",color:"#9ca3af",fontWeight:600,marginBottom:"10px"},
+
+  persp:{perspective:"1000px",cursor:"pointer",marginBottom:"16px"},
+  inner:{position:"relative",height:"300px",transformStyle:"preserve-3d",transition:"transform .65s cubic-bezier(.34,1.56,.64,1)"},
+  face:{position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",borderRadius:"24px",padding:"26px 22px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 32px rgba(26,39,68,.18)"},
+  front:{background:"linear-gradient(150deg,#1a2744,#243a6a)",color:"white"},
+  back:{background:"linear-gradient(150deg,#ff6b47,#ff8f6b)",color:"white",transform:"rotateY(180deg)"},
+
+  badge:{fontSize:"11px",background:"rgba(255,255,255,.18)",color:"rgba(255,255,255,.85)",padding:"2px 10px",borderRadius:"99px",marginBottom:"8px",fontWeight:700},
+  badgeDark:{fontSize:"11px",background:"#e8edf7",color:"#1a2744",padding:"2px 10px",borderRadius:"99px",marginBottom:"8px",fontWeight:700,display:"inline-block"},
+  wordBig:{fontSize:"34px",fontWeight:800,textAlign:"center",marginBottom:"6px",lineHeight:1.2},
+  ipa:{fontSize:"14px",opacity:0.75,marginBottom:"8px",fontFamily:"monospace,monospace",color:"#94a3b8"},
+  pill:{background:"rgba(255,255,255,.18)",padding:"3px 12px",borderRadius:"99px",fontSize:"12px",marginBottom:"10px"},
+  zhBig:{fontSize:"22px",fontWeight:700,color:"#ffd166",textAlign:"center"},
+  hint:{fontSize:"11px",opacity:0.4,marginTop:"auto",paddingTop:"10px"},
+  exLabel:{fontSize:"12px",fontWeight:700,letterSpacing:".1em",opacity:0.8,marginBottom:"12px"},
+  exText:{fontSize:"18px",lineHeight:1.65,textAlign:"center",fontWeight:500},
+  ghostBtn:{marginTop:"14px",background:"rgba(255,255,255,.22)",border:"1.5px solid rgba(255,255,255,.4)",color:"white",padding:"8px 20px",borderRadius:"99px",cursor:"pointer",fontSize:"13px",fontWeight:600},
+
+  row:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px",marginBottom:"10px"},
+  navBtn:{background:"#1a2744",color:"white",border:"none",padding:"10px 16px",borderRadius:"10px",cursor:"pointer",fontSize:"13px",fontWeight:700},
+  goldBtn:{background:"#ffd166",color:"#1a2744",border:"none",padding:"10px 18px",borderRadius:"10px",cursor:"pointer",fontSize:"13px",fontWeight:700},
+  dots:{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:"5px",paddingTop:"4px"},
+  dot:{width:"9px",height:"9px",borderRadius:"50%",cursor:"pointer",transition:"all .2s"},
+
+  scorePill:{background:"#1a2744",color:"white",padding:"10px 16px",borderRadius:"12px",textAlign:"center",marginBottom:"16px",fontSize:"14px",fontWeight:700},
+  whiteCard:{background:"white",borderRadius:"20px",padding:"24px",boxShadow:"0 4px 24px rgba(26,39,68,.1)",display:"flex",flexDirection:"column",alignItems:"center",gap:"12px",marginBottom:"12px"},
+  dashed:{background:"none",border:"2px dashed #d1d5db",color:"#6b7280",padding:"8px 16px",borderRadius:"10px",cursor:"pointer",fontSize:"13px",fontWeight:600},
+  syllRow:{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:"6px"},
+  syllChip:{background:"#dbeafe",color:"#1d4ed8",padding:"6px 14px",borderRadius:"8px",fontSize:"18px",fontWeight:700},
+  textIn:{width:"100%",padding:"14px",border:"2.5px solid #e5e7eb",borderRadius:"14px",fontSize:"22px",textAlign:"center",fontWeight:700,color:"#1a2744",boxSizing:"border-box",transition:"border-color .2s"},
+  checkBtn:{background:"#ff6b47",color:"white",border:"none",padding:"13px 32px",borderRadius:"12px",cursor:"pointer",fontSize:"16px",fontWeight:700,width:"100%",boxShadow:"0 4px 14px rgba(255,107,71,.35)"},
+  banner:{color:"white",padding:"12px 20px",borderRadius:"12px",textAlign:"center",fontWeight:700,fontSize:"16px"},
+  diffRow:{display:"flex",flexWrap:"wrap",justifyContent:"center",gap:"2px",padding:"10px 12px",background:"#fef2f2",borderRadius:"10px"},
+  nextBtn:{background:"#1a2744",color:"white",border:"none",padding:"12px 24px",borderRadius:"12px",cursor:"pointer",fontSize:"15px",fontWeight:700,width:"100%"},
+
+  toggle:{display:"flex",background:"white",borderRadius:"14px",padding:"5px",marginBottom:"16px",boxShadow:"0 2px 12px rgba(26,39,68,.08)",gap:"4px"},
+  togBtn:{flex:1,padding:"11px",border:"none",borderRadius:"10px",cursor:"pointer",fontSize:"14px",fontWeight:700,background:"none",color:"#9ca3af",transition:"all .2s"},
+  togActive:{background:"#ff6b47",color:"white",boxShadow:"0 2px 8px rgba(255,107,71,.4)"},
+  recBtn:{color:"white",border:"none",padding:"14px 32px",borderRadius:"99px",cursor:"pointer",fontSize:"16px",fontWeight:700,width:"100%",boxShadow:"0 4px 14px rgba(255,107,71,.3)"},
+  recPulse:{fontSize:"13px",color:"#ef4444",fontWeight:600,animation:"pulse 1.2s infinite"},
+  transBox:{width:"100%",background:"#f0f1ff",border:"2px solid #c7d2fe",borderRadius:"12px",padding:"12px 16px",boxSizing:"border-box"},
+  transLbl:{fontSize:"11px",color:"#6366f1",fontWeight:700,marginBottom:"4px"},
+  transVal:{fontSize:"16px",color:"#374151",fontStyle:"italic"},
+  fbBox:{width:"100%",borderLeft:"4px solid",borderRadius:"12px",padding:"14px 16px",background:"#fafafa",boxSizing:"border-box"},
+  missedChip:{background:"#fee2e2",color:"#ef4444",padding:"4px 10px",borderRadius:"6px",fontSize:"13px",fontWeight:600},
+};
+
+/* ══════════════════════════════════════════════
+   APP ROOT
+══════════════════════════════════════════════ */
+function App(){
+  const [tab,setTab]=useState('flashcard');
+  /* ★ 共用選取狀態：提升到 App，切 Tab 不會重置 */
+  const [selected,setSelected]=useState(()=>new Set(VOCAB.map((_,i)=>i)));
+
+  const tabs=[
+    ['flashcard','🃏 單字卡'],
+    ['spelling','✏️ 拼字'],
+    ['handwriting','✍️ 手寫'],
+    ['pronunciation','🎤 朗讀'],
+  ];
+
+  const tabStyle=(k)=>({
+    flex:1, padding:"13px 4px", background:"none", border:"none",
+    borderBottom: tab===k?"3px solid #ff6b47":"3px solid transparent",
+    fontSize:"13px", fontWeight:700,
+    color:tab===k?"#ff6b47":"#9ca3af",
+    cursor:"pointer", marginBottom:"-2px", transition:"all .2s",
+  });
+
+  return(
+    <div style={{fontFamily:"'Segoe UI',system-ui,-apple-system,sans-serif",minHeight:"100vh",background:"#faf8f3",color:"#1a2744"}}>
+      <header style={{background:"linear-gradient(135deg,#1a2744,#2d4a7a)",color:"white",padding:"18px 20px 14px",textAlign:"center"}}>
+        <div style={{fontSize:"20px",fontWeight:800,margin:0,letterSpacing:"-0.01em"}}>📖 Lesson 3 英語學習中心</div>
+        <div style={{fontSize:"12px",opacity:0.6,marginTop:"4px"}}>單字卡 &nbsp;·&nbsp; 拼字練習 &nbsp;·&nbsp; 朗讀訓練</div>
+      </header>
+
+      <nav style={{display:"flex",background:"white",borderBottom:"2px solid #f0ede6",position:"sticky",top:0,zIndex:10}}>
+        {tabs.map(([k,l])=>(
+          <button key={k} style={tabStyle(k)} onClick={()=>setTab(k)}>{l}</button>
+        ))}
+      </nav>
+
+      {/* ★ 用 display:none 隱藏而非卸載，所有內部狀態（翻到哪張、答題進度）完整保留 */}
+      <div style={{display:tab==='flashcard'?'block':'none'}}>
+        <FlashcardMode selected={selected} setSelected={setSelected}/>
+      </div>
+      <div style={{display:tab==='spelling'?'block':'none'}}>
+        <SpellingMode selected={selected} setSelected={setSelected}/>
+      </div>
+      <div style={{display:tab==='handwriting'?'block':'none'}}>
+        <HandwritingMode selected={selected} setSelected={setSelected}/>
+      </div>
+      <div style={{display:tab==='pronunciation'?'block':'none'}}>
+        <PronunciationMode/>
+      </div>
+
+      <div style={{textAlign:"center",fontSize:"11px",color:"#b0a898",padding:"12px",borderTop:"1px solid #ede9df",background:"white"}}>
+        🎤 朗讀辨識需使用 Chrome 瀏覽器 &nbsp;|&nbsp; Lesson 3 · 共 {VOCAB.length} 個單字
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
